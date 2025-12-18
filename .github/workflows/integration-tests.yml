@@ -1,0 +1,83 @@
+name: Integration Tests (Full Stack)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  integration-test:
+    name: Full Stack Integration Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat <<EOF > .env
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=social_media_db
+          MINIO_ROOT_USER=minio
+          MINIO_ROOT_PASSWORD=minio_admin
+          RABBITMQ_USER=guest
+          RABBITMQ_PASSWORD=guest
+          KEYCLOAK_ADMIN_USER=admin
+          KEYCLOAK_ADMIN_PASSWORD=admin
+          KEYCLOAK_CLIENT_SECRET=test-secret
+          DJANGO_SUPERUSER_USERNAME=admin
+          DJANGO_SUPERUSER_EMAIL=admin@example.com
+          DJANGO_SUPERUSER_PASSWORD=admin123
+          EOF
+
+      - name: Build and start services
+        run: |
+          docker compose up -d --build
+          echo "Waiting for services to be healthy..."
+          sleep 30
+
+      - name: Check services status
+        run: |
+          docker compose ps
+          docker compose logs
+
+      - name: Test backend health
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8000/api/ 2>/dev/null; do sleep 2; done'
+          curl -v http://localhost:8000/api/
+
+      - name: Test frontend availability
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:4200 2>/dev/null; do sleep 2; done'
+          curl -v http://localhost:4200
+
+      - name: Test MinIO
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live 2>/dev/null; do sleep 2; done'
+
+      - name: Test Keycloak
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8080/health 2>/dev/null; do sleep 2; done'
+
+      - name: Test RabbitMQ
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:15672 2>/dev/null; do sleep 2; done'
+
+      - name: Run backend integration tests
+        run: |
+          docker compose exec -T backend pytest domains/posts/tests/test_integration.py -v
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          docker compose logs
+          docker compose ps
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
