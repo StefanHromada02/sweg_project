@@ -29,23 +29,21 @@ jobs:
         ports:
           - 5432:5432
 
-      minio:
-        image: minio/minio:latest
-        env:
-          MINIO_ROOT_USER: minio
-          MINIO_ROOT_PASSWORD: minio_admin
-        ports:
-          - 9000:9000
-          - 9001:9001
-        options: >-
-          --name minio-service
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Start MinIO
+        run: |
+          docker run -d \
+            --name minio-service \
+            -p 9000:9000 -p 9001:9001 \
+            -e MINIO_ROOT_USER=minio \
+            -e MINIO_ROOT_PASSWORD=minio_admin \
+            minio/minio:latest server /data --console-address ":9001"
+          
+          echo "Waiting for MinIO to be ready..."
+          timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live 2>/dev/null; do sleep 2; done'
+          echo "✅ MinIO is ready"
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -103,6 +101,12 @@ jobs:
         run: |
           sleep 5 
           .venv/bin/pytest
+
+      - name: Cleanup MinIO container
+        if: always()
+        run: |
+          docker stop minio-service || true
+          docker rm minio-service || true
 
   frontend-tests:
     name: Frontend Tests (Angular)
