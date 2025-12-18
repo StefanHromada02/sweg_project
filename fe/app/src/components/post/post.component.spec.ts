@@ -14,7 +14,7 @@ describe('PostComponent', () => {
     text: 'Das ist ein Testinhalt',
     image: 'test-image.jpg',
     title: 'Test Titel',
-    createdAt: '2025-12-01T10:00:00.000Z'
+    created_at: '2025-12-01T10:00:00.000Z'
   };
 
   beforeEach(async () => {
