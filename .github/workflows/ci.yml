@@ -39,7 +39,10 @@ jobs:
           - 9001:9001
         options: >-
           --name minio-service
-          --entrypoint sh
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
@@ -151,22 +154,17 @@ jobs:
     name: MinIO Service Tests
     runs-on: ubuntu-latest
 
-    services:
-      minio:
-        image: minio/minio:latest
-        env:
-          MINIO_ROOT_USER: minio
-          MINIO_ROOT_PASSWORD: minio_admin
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Start MinIO
+        run: |
+          docker run -d \
+            --name minio-test \
+            -p 9000:9000 -p 9001:9001 \
+            -e MINIO_ROOT_USER=minio \
+            -e MINIO_ROOT_PASSWORD=minio_admin \
+            minio/minio:latest server /data --console-address ":9001"
 
       - name: Wait for MinIO to be ready
         run: |
@@ -222,3 +220,9 @@ jobs:
             echo "❌ Bucket not accessible (Status: $HTTP_CODE)"
             exit 1
           fi
+
+      - name: Cleanup MinIO container
+        if: always()
+        run: |
+          docker stop minio-test || true
+          docker rm minio-test || true
