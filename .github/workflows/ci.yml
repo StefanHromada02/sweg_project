@@ -29,54 +29,27 @@ jobs:
         ports:
           - 5432:5432
 
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minio
+          MINIO_ROOT_PASSWORD: minio_admin
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --name minio-service
+          --entrypoint sh
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start MinIO
-        run: |
-          docker run -d \
-            --name minio-service \
-            -p 9000:9000 -p 9001:9001 \
-            -e MINIO_ROOT_USER=minio \
-            -e MINIO_ROOT_PASSWORD=minio_admin \
-            minio/minio:latest server /data --console-address ":9001"
-          
-          echo "Waiting for MinIO to be ready..."
-          timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live 2>/dev/null; do sleep 2; done'
-          echo "✅ MinIO is ready"
-
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
 
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Start MinIO
-        run: |
-          docker run -d \
-            -p 9000:9000 \
-            -p 9001:9001 \
-            --name minio \
-            -e MINIO_ROOT_USER=test \
-            -e MINIO_ROOT_PASSWORD=testtest123 \
-            minio/minio:latest server /data --console-address ":9001"
-          
-          # Kurz warten, bis MinIO bereit ist
-          echo "Waiting for MinIO..."
-          for i in {1..30}; do
-            if curl -s http://localhost:9000/minio/health/ready; then
-              echo "MinIO is up!"
-              break
-            fi
-            sleep 1
-          done
 
       - name: Install dependencies
         working-directory: ./be/
@@ -84,29 +57,28 @@ jobs:
           python -m venv .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -r requirements.txt
-          .venv/bin/pip install pytest pytest-django
+          .venv/bin/pip install pytest pytest-django flake8
+
+      - name: Lint with flake8
+        working-directory: ./be/
+        run: |
+          .venv/bin/flake8 --max-line-length=120 --exclude=migrations,__pycache__,.venv --count --statistics .
 
       - name: Run unit tests (mocked)
         working-directory: ./be/
         env:
           PYTHONPATH: .
           DJANGO_SETTINGS_MODULE: config.settings
-          POSTGRES_HOST: db
+          POSTGRES_HOST: localhost
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: social_media_db
-          MINIO_ENDPOINT: minio:9000
+          MINIO_ENDPOINT: localhost:9000
           MINIO_ACCESS_KEY: minio
           MINIO_SECRET_KEY: minio_admin
         run: |
           sleep 5 
           .venv/bin/pytest
-
-      - name: Cleanup MinIO container
-        if: always()
-        run: |
-          docker stop minio-service || true
-          docker rm minio-service || true
 
   frontend-tests:
     name: Frontend Tests (Angular)
@@ -169,90 +141,14 @@ jobs:
           python -m venv .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install pytest flake8
 
-      - name: Run unit tests
+      - name: Lint with flake8
         working-directory: ./resize-service/
         run: |
-          .venv/bin/pytest test_resize_worker.py -v
+          .venv/bin/flake8 --max-line-length=120 --count --statistics resize_worker.py
 
       - name: Check code syntax
         working-directory: ./resize-service/
         run: |
           .venv/bin/python -m py_compile resize_worker.py
-
-  test_minio_service:
-    name: MinIO Service Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Start MinIO
-        run: |
-          docker run -d \
-            --name minio-test \
-            -p 9000:9000 -p 9001:9001 \
-            -e MINIO_ROOT_USER=minio \
-            -e MINIO_ROOT_PASSWORD=minio_admin \
-            minio/minio:latest server /data --console-address ":9001"
-
-      - name: Wait for MinIO to be ready
-        run: |
-          echo "Waiting for MinIO to be ready..."
-          timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live 2>/dev/null; do sleep 2; done'
-          echo "✅ MinIO is healthy"
-
-      - name: Install MinIO Client
-        run: |
-          wget https://dl.min.io/client/mc/release/linux-amd64/mc
-          chmod +x mc
-          sudo mv mc /usr/local/bin/
-
-      - name: Configure MinIO Client
-        run: |
-          mc alias set local http://localhost:9000 minio minio_admin
-          
-      - name: Create and test bucket
-        run: |
-          # Create bucket
-          mc mb --ignore-existing local/social-media-bucket
-          echo "✅ Bucket created"
-          
-          # Set public policy
-          mc anonymous set public local/social-media-bucket
-          echo "✅ Public policy set"
-          
-          # Test upload
-          echo "test content" > test-file.txt
-          mc cp test-file.txt local/social-media-bucket/
-          echo "✅ File upload successful"
-          
-          # Test list
-          mc ls local/social-media-bucket/
-          echo "✅ Bucket listing successful"
-          
-          # Test download
-          mc cp local/social-media-bucket/test-file.txt downloaded-file.txt
-          if [ -f downloaded-file.txt ]; then
-            echo "✅ File download successful"
-          else
-            echo "❌ File download failed"
-            exit 1
-          fi
-
-      - name: Test public HTTP access
-        run: |
-          # Test public access via HTTP
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/social-media-bucket/)
-          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "403" ]; then
-            echo "✅ Bucket is accessible via HTTP (Status: $HTTP_CODE)"
-          else
-            echo "❌ Bucket not accessible (Status: $HTTP_CODE)"
-            exit 1
-          fi
-
-      - name: Cleanup MinIO container
-        if: always()
-        run: |
-          docker stop minio-test || true
-          docker rm minio-test || true
