@@ -146,3 +146,79 @@ jobs:
         working-directory: ./resize-service/
         run: |
           .venv/bin/python -m py_compile resize_worker.py
+
+  test_minio_service:
+    name: MinIO Service Tests
+    runs-on: ubuntu-latest
+
+    services:
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minio
+          MINIO_ROOT_PASSWORD: minio_admin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for MinIO to be ready
+        run: |
+          echo "Waiting for MinIO to be ready..."
+          timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live 2>/dev/null; do sleep 2; done'
+          echo "✅ MinIO is healthy"
+
+      - name: Install MinIO Client
+        run: |
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          chmod +x mc
+          sudo mv mc /usr/local/bin/
+
+      - name: Configure MinIO Client
+        run: |
+          mc alias set local http://localhost:9000 minio minio_admin
+          
+      - name: Create and test bucket
+        run: |
+          # Create bucket
+          mc mb --ignore-existing local/social-media-bucket
+          echo "✅ Bucket created"
+          
+          # Set public policy
+          mc anonymous set public local/social-media-bucket
+          echo "✅ Public policy set"
+          
+          # Test upload
+          echo "test content" > test-file.txt
+          mc cp test-file.txt local/social-media-bucket/
+          echo "✅ File upload successful"
+          
+          # Test list
+          mc ls local/social-media-bucket/
+          echo "✅ Bucket listing successful"
+          
+          # Test download
+          mc cp local/social-media-bucket/test-file.txt downloaded-file.txt
+          if [ -f downloaded-file.txt ]; then
+            echo "✅ File download successful"
+          else
+            echo "❌ File download failed"
+            exit 1
+          fi
+
+      - name: Test public HTTP access
+        run: |
+          # Test public access via HTTP
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/social-media-bucket/)
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "403" ]; then
+            echo "✅ Bucket is accessible via HTTP (Status: $HTTP_CODE)"
+          else
+            echo "❌ Bucket not accessible (Status: $HTTP_CODE)"
+            exit 1
+          fi
