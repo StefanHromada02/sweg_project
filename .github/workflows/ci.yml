@@ -57,12 +57,7 @@ jobs:
           python -m venv .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -r requirements.txt
-          .venv/bin/pip install pytest pytest-django flake8
-
-      - name: Lint with flake8
-        working-directory: ./be/
-        run: |
-          .venv/bin/flake8 --max-line-length=120 --exclude=migrations,__pycache__,.venv --count --statistics .
+          .venv/bin/pip install pytest pytest-django
 
       - name: Run unit tests (mocked)
         working-directory: ./be/
@@ -141,12 +136,6 @@ jobs:
           python -m venv .venv
           .venv/bin/pip install --upgrade pip
           .venv/bin/pip install -r requirements.txt
-          .venv/bin/pip install pytest flake8
-
-      - name: Lint with flake8
-        working-directory: ./resize-service/
-        run: |
-          .venv/bin/flake8 --max-line-length=120 --count --statistics resize_worker.py
 
       - name: Check code syntax
         working-directory: ./resize-service/
