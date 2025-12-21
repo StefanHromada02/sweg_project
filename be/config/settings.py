@@ -113,6 +113,8 @@ else:
             'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
             'HOST': os.getenv('DATABASE_HOST', os.getenv('POSTGRES_HOST', 'db')),
             'PORT': os.getenv('DATABASE_PORT', os.getenv('POSTGRES_PORT', '5432')),
+            'CONN_MAX_AGE': 0,  # Disable persistent connections for tests
+            'ATOMIC_REQUESTS': False,  # Let pytest-django handle transactions
         }
     }
 
