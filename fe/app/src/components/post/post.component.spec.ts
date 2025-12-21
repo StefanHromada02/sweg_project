@@ -12,10 +12,10 @@ describe('PostComponent', () => {
 
   const mockPost: PostModel = {
     id: 1,
-    user: 1,
+    author_id: '1',
+    author_name: 'Test User',
     text: 'Das ist ein Testinhalt',
     image: 'test-image.jpg',
-    thumbnail: 'test-thumb.jpg',
     title: 'Test Titel',
     created_at: '2025-12-01T10:00:00.000Z'
   };
@@ -62,11 +62,11 @@ describe('PostComponent', () => {
     expect(imgEl).toBeTruthy();
 
     const src = imgEl.nativeElement.getAttribute('src');
-    expect(src).toBe('/api/posts/image/?path=test-thumb.jpg');
+    expect(src).toBe('http://localhost:9000/social-media-bucket/test-image.jpg');
   });
 
   it('should NOT render the image tag if post has no image', () => {
-    component.post = { ...mockPost, image: '', thumbnail: '' };
+    component.post = { ...mockPost, image: '' };
     fixture.detectChanges();
 
     const imgEl = fixture.debugElement.query(By.css('img'));
