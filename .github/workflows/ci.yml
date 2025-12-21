@@ -32,6 +32,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
       - name: Start MinIO
         run: |
           docker run -d \
@@ -44,13 +50,6 @@ jobs:
           echo "Waiting for MinIO to be ready..."
           timeout 60 bash -c 'until curl -f http://localhost:9000/minio/health/live 2>/dev/null; do sleep 2; done'
           echo "✅ MinIO is ready"
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
 
       - name: Install dependencies
         working-directory: ./be/
@@ -65,11 +64,11 @@ jobs:
         env:
           PYTHONPATH: .
           DJANGO_SETTINGS_MODULE: config.settings
-          POSTGRES_HOST: localhost
+          POSTGRES_HOST: db
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: social_media_db
-          MINIO_ENDPOINT: localhost:9000
+          MINIO_ENDPOINT: minio:9000
           MINIO_ACCESS_KEY: minio
           MINIO_SECRET_KEY: minio_admin
         run: |
