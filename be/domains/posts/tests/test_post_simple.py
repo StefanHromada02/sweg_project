@@ -12,7 +12,7 @@ class TestPostSimple:
         # Arrange – Fake Post
         fake_post = Post(
             id=1,
-            author_id="1",
+            author_id="alice-123",
             author_name="Alice",
             title="Hello World",
             text="This is my first post!",
@@ -22,7 +22,7 @@ class TestPostSimple:
 
         # Act
         post = Post.objects.create(
-            author_id="1",
+            author_id="alice-123",
             author_name="Alice",
             title="Hello World",
             text="This is my first post!",

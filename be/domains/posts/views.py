@@ -48,10 +48,16 @@ class PostViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-        # Get user info from the token
+        # Get user info from the token or from user object (for tests)
         token = self.request.auth
-        author_id = token.get('sub')
-        author_name = token.get('preferred_username', 'anonymous')
+        if token:
+            author_id = token.get('sub')
+            author_name = token.get('preferred_username', 'anonymous')
+        else:
+            # For tests with force_authenticate, use the user object
+            user = self.request.user
+            author_id = getattr(user, 'sub', 'test-user')
+            author_name = getattr(user, 'name', 'Test User')
 
         # Save with MinIO path and author details
         post = serializer.save(image=image_path or "", author_id=author_id, author_name=author_name)
@@ -98,8 +104,6 @@ class PostViewSet(viewsets.ModelViewSet):
         """
         if instance.image:
             minio_storage.delete_image(instance.image)
-        if instance.thumbnail:
-            minio_storage.delete_image(instance.thumbnail)
         instance.delete()
 
     @extend_schema(

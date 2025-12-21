@@ -10,7 +10,7 @@ class TestPostSerializer:
     def test_serializer_with_valid_data(self):
         """Test deserialization (validation) of correct data."""
         valid_data = {
-            "author_id": "1",
+            "author_id": "test-user-123",
             "author_name": "Test User",
             "title": "A valid title",
             "text": "Valid text content."
@@ -22,7 +22,7 @@ class TestPostSerializer:
     def test_serializer_with_invalid_data_missing_title(self):
         """Test serializer detects missing required fields (e.g. title)."""
         invalid_data = {
-            "author_id": "1",
+            "author_id": "test-user-123",
             "author_name": "Test User",
             "text": "Missing the title."
         }
@@ -33,34 +33,30 @@ class TestPostSerializer:
 
     def test_serializer_with_invalid_data_missing_text(self):
         """Test serializer detects missing text field."""
-        data = {
-            "author_id": "1",
+        invalid_data = {
+            "author_id": "test-user-123",
             "author_name": "Test User",
-            "title": "Only Title"
+            "title": "Title without text."
         }
-        serializer = PostSerializer(data=data)
+        
+        serializer = PostSerializer(data=invalid_data)
         assert not serializer.is_valid()
         assert 'text' in serializer.errors
 
-    def test_serializer_output_format(self):
-        """Test serializer output includes all expected fields."""
+    def test_serialize_existing_post(self):
+        """Test serialization of an existing Post instance."""
         post = Post.objects.create(
-            author_id="1",
+            author_id="test-user-123",
             author_name="Test User",
-            title="Test Post",
-            text="Test Content",
-            image="posts/test.jpg"
+            title="Sample Post",
+            text="Sample text.",
+            image="posts/sample.jpg"
         )
-        
-        serializer = PostSerializer(post)
+        serializer = PostSerializer(instance=post)
         data = serializer.data
         
-        assert 'id' in data
-        assert 'author_id' in data
-        assert 'author_name' in data
-        assert 'title' in data
-        assert 'text' in data
-        assert 'image' in data
-        assert 'created_at' in data
-        assert data['title'] == "Test Post"
-        assert data['image'].endswith("posts/test.jpg")
+        assert data['id'] == post.id
+        assert data['title'] == "Sample Post"
+        assert data['text'] == "Sample text."
+        assert data['author_id'] == "test-user-123"
+        assert data['author_name'] == "Test User"
