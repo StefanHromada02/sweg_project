@@ -10,7 +10,7 @@ class TestPostModel:
     def test_post_creation(self):
         """Test creating a post."""
         post = Post.objects.create(
-            author_id="1",
+            author_id="test-user-123",
             author_name="Test User",
             title="Test Post",
             text="This is a test post.",
@@ -19,13 +19,14 @@ class TestPostModel:
         
         assert post.id is not None
         assert post.title == "Test Post"
+        assert post.author_id == "test-user-123"
         assert post.author_name == "Test User"
         assert str(post) == "Test Post by Test User"
 
     def test_manager_newest_first(self):
         """Test that PostManager returns posts sorted by newest first."""
         post_older = Post.objects.create(
-            author_id="1",
+            author_id="test-user-123",
             author_name="Test User",
             title="Older Post",
             text="This is an older post.",
@@ -33,7 +34,7 @@ class TestPostModel:
         )
         time.sleep(0.01)
         post_newer = Post.objects.create(
-            author_id="1",
+            author_id="test-user-123",
             author_name="Test User",
             title="Newer Post",
             text="This is a newer post.",
