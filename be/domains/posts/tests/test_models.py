@@ -23,8 +23,11 @@ class TestPostModel:
         assert post.author_name == "Test User"
         assert str(post) == "Test Post by Test User"
 
-    def test_manager_newest_first(self):
+    def test_manager_newest_first(self, transactional_db):
         """Test that PostManager returns posts sorted by newest first."""
+        # Clear any existing posts to ensure clean test
+        Post.objects.all().delete()
+        
         post_older = Post.objects.create(
             author_id="test-user-123",
             author_name="Test User",
@@ -42,5 +45,6 @@ class TestPostModel:
         )
         
         posts = Post.objects.newest_first()
+        assert posts.count() == 2
         assert posts.first() == post_newer
         assert posts.last() == post_older
