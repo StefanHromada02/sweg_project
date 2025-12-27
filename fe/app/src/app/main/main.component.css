@@ -5,3 +5,12 @@
   gap: 20px;
   padding: 20px;
 }
+
+.search-container {
+  margin-bottom: 20px;
+  padding: 10px;
+}
+
+.search-field {
+  width: 100%;
+}

@@ -13,9 +13,10 @@ export class ApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getPostsForUniversity(University: string): Observable<any> {
+  getPostsForUniversity(University: string, search?: string): Observable<any> {
     // Backend currently ignores university filter; adjust when BE supports it
-    return this.http.get(`${this.baseUrl}/posts/`);
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    return this.http.get(`${this.baseUrl}/posts/${params}`);
   }
 
   createPost(post: Partial<PostModel>, imageFile?: File): Observable<any> {
