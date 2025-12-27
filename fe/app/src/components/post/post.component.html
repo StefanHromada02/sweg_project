@@ -24,6 +24,10 @@
         Kommentare anzeigen
       </button>
       <button mat-button color="primary" (click)="toggleCommentInput()">Kommentieren</button>
+      <button mat-button color="accent" (click)="generateAiComment()" [disabled]="isGeneratingAiComment">
+        <mat-icon>smart_toy</mat-icon>
+        {{ isGeneratingAiComment ? 'Generiere...' : 'AI Kommentar' }}
+      </button>
     </div>
   </mat-card-actions>
 

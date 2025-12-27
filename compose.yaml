@@ -153,6 +153,17 @@ services:
       - minio
       - rabbitmq
 
+  ai-comment-service:
+    build:
+      context: ./ai-comment-service
+      dockerfile: Dockerfile
+    container_name: social-media-ai-comment
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      FLASK_ENV: production
+
 volumes:
   db_data:
   minio_data:

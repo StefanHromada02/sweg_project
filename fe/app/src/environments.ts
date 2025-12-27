@@ -5,5 +5,6 @@ export const backendUrl = {
 
 export const environment = {
   apiUrl: '/api',
-  minioUrl: 'http://localhost:9000/social-media-bucket'
+  minioUrl: 'http://localhost:9000/social-media-bucket',
+  aiServiceUrl: 'http://localhost:8001'
 };
