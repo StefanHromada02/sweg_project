@@ -40,6 +40,7 @@ export class PostComponent implements OnInit{
   showComments: boolean = false;
   showCommentInput: boolean = false;
   newCommentText: string = '';
+  isGeneratingAiComment: boolean = false;
 
   constructor(private readonly apiService: ApiService) {}
 
@@ -98,6 +99,24 @@ export class PostComponent implements OnInit{
       },
       error: (error) => {
         console.error('Fehler beim Erstellen des Kommentars:', error);
+      }
+    });
+  }
+
+  generateAiComment(): void {
+    this.isGeneratingAiComment = true;
+    
+    this.apiService.generateAiComment(this.post.title, this.post.text).subscribe({
+      next: (response) => {
+        this.newCommentText = response.comment;
+        this.showCommentInput = true;
+        this.isGeneratingAiComment = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Generieren des AI-Kommentars:', error);
+        this.newCommentText = 'Wow, so interesting... I guess. 🤖';
+        this.showCommentInput = true;
+        this.isGeneratingAiComment = false;
       }
     });
   }
