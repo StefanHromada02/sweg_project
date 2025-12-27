@@ -130,7 +130,7 @@ class PostViewSet(viewsets.ModelViewSet):
             )
         ]
     )
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def image(self, request):
         """Serve image from MinIO storage."""
         from django.http import HttpResponse
