@@ -5,11 +5,8 @@ import { of } from 'rxjs';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { PostComponent } from '../../components/post/post.component';
 import { NewPostModal } from '../../components/new-post-modal/new-post-modal';
-import { NavbarComponent } from '../../components/navbar/navbar.component';
-import { KeycloakService } from 'keycloak-angular';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-// Mock für PostComponent
+// 1. Mock für PostComponent
 @Component({
   selector: 'app-post',
   template: '',
@@ -19,7 +16,7 @@ class MockPostComponent {
   @Input() post: any;
 }
 
-// Mock für NewPostModal
+// 2. Mock für NewPostModal
 @Component({
   selector: 'app-new-post-modal',
   template: '',
@@ -29,50 +26,40 @@ class MockNewPostModal {
   @Output() created = new EventEmitter<void>();
 }
 
-// Mock für NavbarComponent
-@Component({
-  selector: 'app-navbar',
-  template: '',
-  standalone: true
-})
-class MockNavbarComponent {
-  @Output() search = new EventEmitter<string>();
-}
-
 describe('MainComponent', () => {
   let component: MainComponent;
   let fixture: ComponentFixture<MainComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
   const mockPosts = [
-    { id: 1, title: 'Post 1', text: 'Text 1', author_id: '1', author_name: 'User 1', image: '', thumbnail: '', created_at: new Date().toISOString() },
-    { id: 2, title: 'Post 2', text: 'Text 2', author_id: '2', author_name: 'User 2', image: '', thumbnail: '', created_at: new Date().toISOString() }
+    { id: 1, content: 'Hallo Welt', university: 'Technikum' },
+    { id: 2, content: 'Angular ist toll', university: 'Technikum' }
   ];
 
   beforeEach(async () => {
-    const apiSpy = jasmine.createSpyObj('ApiService', ['getPostsForUniversity', 'searchPosts']);
-    const keycloakSpy = jasmine.createSpyObj('KeycloakService', ['logout', 'manageAccount']);
+    const spy = jasmine.createSpyObj('ApiService', ['getPostsForUniversity']);
 
     await TestBed.configureTestingModule({
-      imports: [MainComponent, HttpClientTestingModule],
+      imports: [MainComponent], // Wir laden die echte Komponente
       providers: [
-        { provide: ApiService, useValue: apiSpy },
-        { provide: KeycloakService, useValue: keycloakSpy }
+        { provide: ApiService, useValue: spy }
       ]
     })
-    .overrideComponent(MainComponent, {
-      remove: {
-        imports: [PostComponent, NewPostModal, NavbarComponent]
-      },
-      add: {
-        imports: [MockPostComponent, MockNewPostModal, MockNavbarComponent]
-      }
-    })
-    .compileComponents();
+      .overrideComponent(MainComponent, {
+        // WICHTIG: Hier lösen wir den Konflikt NG0300!
+        // Wir entfernen die ECHTEN Importe aus der Metadaten der Komponente...
+        remove: {
+          imports: [PostComponent, NewPostModal]
+        },
+        // ...und fügen stattdessen unsere MOCKS hinzu.
+        add: {
+          imports: [MockPostComponent, MockNewPostModal]
+        }
+      })
+      .compileComponents();
 
     apiServiceSpy = TestBed.inject(ApiService) as jasmine.SpyObj<ApiService>;
     apiServiceSpy.getPostsForUniversity.and.returnValue(of(mockPosts));
-    apiServiceSpy.searchPosts.and.returnValue(of(mockPosts));
 
     fixture = TestBed.createComponent(MainComponent);
     component = fixture.componentInstance;
@@ -83,28 +70,23 @@ describe('MainComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load posts on init', () => {
-    expect(apiServiceSpy.getPostsForUniversity).toHaveBeenCalledWith('Technikum');
+  it('should load posts from university "Technikum" on initialization', () => {
+    expect(apiServiceSpy.getPostsForUniversity).toHaveBeenCalledWith('Technikum', undefined);
     component.posts$.subscribe(posts => {
       expect(posts.length).toBe(2);
+      expect(posts).toEqual(mockPosts);
     });
   });
 
   it('should refresh posts when onCreated is called', () => {
     apiServiceSpy.getPostsForUniversity.calls.reset();
     component.onCreated();
-    expect(apiServiceSpy.getPostsForUniversity).toHaveBeenCalledWith('Technikum');
+    expect(apiServiceSpy.getPostsForUniversity).toHaveBeenCalledWith('Technikum', undefined);
   });
 
-  it('should call searchPosts on search event', () => {
-    const searchTerm = 'test';
-    component.onSearch(searchTerm);
-    expect(apiServiceSpy.searchPosts).toHaveBeenCalledWith(searchTerm);
-  });
-
-  it('should render the correct number of post components', () => {
-    const postElements = fixture.debugElement.nativeElement.querySelectorAll('app-post');
+  it('should render the correct number of post components via template', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const postElements = compiled.querySelectorAll('app-post');
     expect(postElements.length).toBe(2);
   });
 });
-
