@@ -1,16 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { KeycloakService } from 'keycloak-angular';
 
 describe('App', () => {
   let component: App;
   let fixture: ComponentFixture<App>;
+  let mockKeycloakService: jasmine.SpyObj<KeycloakService>;
 
   beforeEach(async () => {
+    mockKeycloakService = jasmine.createSpyObj('KeycloakService', ['logout']);
+    
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
-        provideRouter([])
+        provideRouter([]),
+        { provide: KeycloakService, useValue: mockKeycloakService }
       ]
     }).compileComponents();
 
