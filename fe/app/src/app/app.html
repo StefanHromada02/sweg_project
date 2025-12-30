@@ -1,2 +1,12 @@
-<router-outlet />
-
+<header class="app-header">
+  <div class="header-content">
+    <h1 class="app-title">Social Media App</h1>
+    <button class="logout-button" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Logout
+    </button>
+  </div>
+</header>
+<div class="wrapper">
+  <router-outlet />
+</div>
