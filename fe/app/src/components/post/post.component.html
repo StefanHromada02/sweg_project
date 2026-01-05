@@ -5,12 +5,10 @@
     <p class="post-meta">{{ post.author_name }} | {{ formattedDate }}</p>
   </mat-card-content>
 
-  @if (post.image) {
+  @if (post.thumbnail) {
     <img
       mat-card-image
       [src]="getImageUrl()"
-      [src]="environment.minioUrl + '/' + post.image"
-      alt="Post image"
       class="post-image"
       (click)="openFullImage()"
       style="cursor: pointer;"

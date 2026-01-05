@@ -4,6 +4,7 @@ export interface PostModel {
   author_name: string;
   text: string;
   image: string;
+  thumbnail: string;
   title: string;
   created_at: string;
   comment_count?: number;
