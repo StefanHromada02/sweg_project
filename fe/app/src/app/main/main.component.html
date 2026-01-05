@@ -1,4 +1,7 @@
+<app-navbar (search)="onSearch($event)"></app-navbar>
 <app-new-post-modal (created)="onCreated()"></app-new-post-modal>
-@for (post of posts$ | async; track post.id) {
+<div class="post-container">
+  @for (post of posts$ | async; track post.id) {
     <app-post [post]="post"></app-post>
-}
+  }
+</div>

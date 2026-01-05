@@ -1,0 +1,75 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.search-container {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 0 16px;
+  height: 40px;
+  width: 100%;
+  max-width: 500px;
+  transition: background-color 0.3s ease;
+}
+
+.search-bar:hover,
+.search-bar:focus-within {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.search-icon {
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: black;
+  font-size: 16px;
+  width: 100%;
+  padding: 0 12px;
+}
+
+.search-input::placeholder {
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.profile-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+

@@ -41,4 +41,8 @@ export class ApiService {
   createComment(comment: { post: number; text: string }): Observable<CommentModel> {
     return this.http.post<CommentModel>(`${this.baseUrl}/comments/`, comment);
   }
+
+  searchPosts(searchTerm: string): Observable<PostModel[]> {
+    return this.http.get<PostModel[]>(`${this.baseUrl}/posts/?search=${searchTerm}`);
+  }
 }
