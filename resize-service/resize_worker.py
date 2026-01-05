@@ -11,6 +11,7 @@ import boto3
 from io import BytesIO
 from PIL import Image
 from botocore.exceptions import ClientError
+from sqlalchemy import create_engine, text
 
 
 class ImageResizeService:
@@ -32,7 +33,7 @@ class ImageResizeService:
         self.bucket_name = os.getenv('MINIO_BUCKET', 'social-media-bucket')
 
         # Thumbnail configuration
-        self.thumbnail_size = (300, 300)
+        self.thumbnail_size = (1000, 1000)
 
         # Database configuration
         self.db_host = os.getenv('POSTGRES_HOST', 'db')
@@ -48,6 +49,10 @@ class ImageResizeService:
             aws_secret_access_key=self.minio_secret_key,
             region_name='us-east-1'
         )
+
+        # Initialize SQLAlchemy Engine
+        db_url = f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}/{self.db_name}"
+        self.db_engine = create_engine(db_url)
 
     def connect_db(self):
         """Connect to PostgreSQL database."""
@@ -124,18 +129,12 @@ class ImageResizeService:
     def update_post_thumbnail(self, post_id: int, thumbnail_path: str):
         """Update post record with thumbnail path."""
         try:
-            conn = self.connect_db()
-            cursor = conn.cursor()
-            
-            cursor.execute(
-                "UPDATE posts_post SET thumbnail = %s WHERE id = %s",
-                (thumbnail_path, post_id)
-            )
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
+            with self.db_engine.connect() as conn:
+                conn.execute(
+                    text("UPDATE posts_post SET thumbnail = :thumbnail WHERE id = :id"),
+                    {"thumbnail": thumbnail_path, "id": post_id}
+                )
+                conn.commit()
             print(f"Updated post {post_id} with thumbnail: {thumbnail_path}")
         except Exception as e:
             print(f"Error updating post {post_id}: {e}")

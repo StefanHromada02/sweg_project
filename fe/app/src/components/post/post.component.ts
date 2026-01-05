@@ -113,19 +113,14 @@ export class PostComponent implements OnInit{
   }
 
   getImageUrl(): string {
-    const imagePath = this.post.image;
-    if (!imagePath) {
-      return '';
-    }
-    // Use the backend API endpoint to serve images
-    return `${environment.apiUrl}/posts/image/?path=${imagePath}`;
+    // The backend now provides the full URL to the image
+    return this.post.thumbnail || this.post.image || '';
   }
 
   openFullImage(): void {
     if (this.post.image) {
       // Open full-size image in a new window
-      const fullImageUrl = `${environment.apiUrl}/posts/image/?path=${this.post.image}`;
-      window.open(fullImageUrl, '_blank');
+      window.open(this.post.image, '_blank');
     }
   }
 

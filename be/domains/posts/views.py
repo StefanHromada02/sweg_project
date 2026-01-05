@@ -54,7 +54,13 @@ class PostViewSet(viewsets.ModelViewSet):
         author_name = token.get('preferred_username', 'anonymous')
 
         # Save with MinIO path and author details
-        serializer.save(image=image_path or "", author_id=author_id, author_name=author_name)
+        post = serializer.save(image=image_path or "", author_id=author_id, author_name=author_name)
+
+        # Send resize task to queue
+        if image_path:
+            from services.rabbitmq_service import RabbitMQService
+            rabbitmq_service = RabbitMQService()
+            rabbitmq_service.send_resize_task(image_path, post.id)
 
     def perform_update(self, serializer):
         """
@@ -77,9 +83,11 @@ class PostViewSet(viewsets.ModelViewSet):
                     {"error": "Failed to upload image"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            post = serializer.save(image=image_path, thumbnail="")
+            post = serializer.save(image=image_path, thumbnail=None)
 
             # Send resize task to queue
+            from services.rabbitmq_service import RabbitMQService
+            rabbitmq_service = RabbitMQService()
             rabbitmq_service.send_resize_task(image_path, post.id)
         else:
             serializer.save()

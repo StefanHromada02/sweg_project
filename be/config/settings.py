@@ -131,7 +131,7 @@ AWS_S3_CUSTOM_DOMAIN = f"http://{MINIO_ENDPOINT}"
 
 # Konfiguration von django-storages
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/"
+MEDIA_URL = f"http://localhost:9000/{AWS_STORAGE_BUCKET_NAME}/"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

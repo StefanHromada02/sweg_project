@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: social-media-backend
     restart: always
+    volumes:
+      - ./be:/app
     environment:
       POSTGRES_HOST: db
       POSTGRES_USER: ${POSTGRES_USER}
