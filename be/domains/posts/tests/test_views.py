@@ -2,10 +2,11 @@ import pytest
 from rest_framework.test import APIClient
 from rest_framework import status
 from domains.posts.models import Post
-from domains.users.models import User
 from django.urls import reverse
 from unittest.mock import patch
 
+
+from config.authentication import DummyUser
 
 @pytest.mark.django_db
 class TestPostViewSet:
@@ -14,13 +15,17 @@ class TestPostViewSet:
     def setup_method(self):
         """Setup test data before each test."""
         self.client = APIClient()
-        self.user = User.objects.create(
-            name="API User",
-            email="api@technikum-wien.at",
-            study_program="Software Engineering"
-        )
+        self.author_id = "1"
+        self.author_name = "API User"
+
+        # Authenticate the client
+        user = DummyUser()
+        token = {'sub': self.author_id, 'preferred_username': self.author_name}
+        self.client.force_authenticate(user=user, token=token)
+
         self.post = Post.objects.create(
-            user=self.user,
+            author_id=self.author_id,
+            author_name=self.author_name,
             title="API Test Post",
             text="Content for API test.",
             image="posts/test.jpg"
@@ -43,14 +48,15 @@ class TestPostViewSet:
     def test_create_post_without_image(self):
         """Test POST /api/posts/ creates post without image."""
         data = {
-            "user": self.user.id,
+            "author_id": self.author_id,
+            "author_name": self.author_name,
             "title": "New Post",
             "text": "Test content"
         }
         response = self.client.post(self.list_url, data, format='json')
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['title'] == "New Post"
-        assert response.data['image'] == ""
+        assert response.data['image'] is None
 
     def test_create_post_invalid_data(self):
         """Test POST /api/posts/ with missing required fields."""
@@ -64,7 +70,8 @@ class TestPostViewSet:
     def test_update_post(self):
         """Test PUT /api/posts/<pk>/ updates post."""
         data = {
-            "user": self.user.id,
+            "author_id": self.author_id,
+            "author_name": self.author_name,
             "title": "Updated Title",
             "text": "Updated content"
         }

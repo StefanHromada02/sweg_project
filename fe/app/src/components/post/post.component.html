@@ -9,6 +9,7 @@
     <img
       mat-card-image
       [src]="getImageUrl()"
+      alt="Post image"
       class="post-image"
       (click)="openFullImage()"
       style="cursor: pointer;"
@@ -55,7 +56,7 @@
             <div class="comment-item">
               <div class="comment-header">
                 <strong class="comment-author">
-                  {{ comment.user_details?.name || 'User ' + comment.user }}
+                  {{ comment.author_name }}
                 </strong>
                 <span class="comment-date">{{ formatCommentDate(comment.created_at) }}</span>
               </div>

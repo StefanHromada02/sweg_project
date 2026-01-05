@@ -13,5 +13,5 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     """Simplified serializer for creating comments."""
     class Meta:
         model = Comment
-        fields = ["id", "post", "text", "created_at"]
-        read_only_fields = ["created_at"]
+        fields = ["id", "post", "text", "created_at", "author_id", "author_name"]
+        read_only_fields = ["created_at", "author_id", "author_name"]

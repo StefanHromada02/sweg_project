@@ -2,10 +2,11 @@ import pytest
 from rest_framework.test import APIClient
 from rest_framework import status
 from domains.posts.models import Post
-from domains.users.models import User
 from django.urls import reverse
 from unittest.mock import patch
 
+
+from config.authentication import DummyUser
 
 @pytest.mark.django_db
 class TestPostAPIIntegration:
@@ -15,11 +16,13 @@ class TestPostAPIIntegration:
         """Setup test data before each test."""
         self.client = APIClient()
         self.list_url = reverse('post-list')
-        self.user = User.objects.create(
-            name="Integration User",
-            email="integration@technikum-wien.at",
-            study_program="Software Engineering"
-        )
+        self.author_id = "1"
+        self.author_name = "Integration User"
+
+        # Authenticate the client
+        user = DummyUser()
+        token = {'sub': self.author_id, 'preferred_username': self.author_name}
+        self.client.force_authenticate(user=user, token=token)
 
     @patch('services.minio_storage.minio_storage.delete_image')
     def test_complete_post_lifecycle(self, mock_delete):
@@ -28,7 +31,8 @@ class TestPostAPIIntegration:
 
         # 1. CREATE
         create_data = {
-            'user': self.user.id,
+            'author_id': self.author_id,
+            'author_name': self.author_name,
             'title': 'Lifecycle Test Post',
             'text': 'Initial content'
         }
@@ -44,7 +48,8 @@ class TestPostAPIIntegration:
 
         # 3. UPDATE
         update_data = {
-            'user': self.user.id,
+            'author_id': self.author_id,
+            'author_name': self.author_name,
             'title': 'Updated Lifecycle Post',
             'text': 'Updated content'
         }

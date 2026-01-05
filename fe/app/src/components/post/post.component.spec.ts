@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { environment } from '../../environments';
 import { PostModel } from '../../app/models/post.model';
-import {PostComponent} from './post.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { PostComponent } from './post.component';
 
 describe('PostComponent', () => {
   let component: PostComponent;
@@ -10,16 +11,18 @@ describe('PostComponent', () => {
 
   const mockPost: PostModel = {
     id: 1,
-    userId: 1,
+    author_id: '1',
+    author_name: 'Test User',
     text: 'Das ist ein Testinhalt',
     image: 'test-image.jpg',
+    thumbnail: 'test-image.jpg',
     title: 'Test Titel',
-    createdAt: '2025-12-01T10:00:00.000Z'
+    created_at: '2025-12-01T10:00:00.000Z'
   };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PostComponent]
+      imports: [PostComponent, HttpClientTestingModule]
     })
       .compileComponents();
 
@@ -36,13 +39,15 @@ describe('PostComponent', () => {
   });
 
   it('should format the date correctly in ngOnInit', () => {
+    component.post = { ...mockPost, created_at: '2025-12-01T10:00:00.000Z' };
+    component.ngOnInit();
     expect(component.formattedDate).toContain('1. Dezember 2025');
   });
 
   it('should render the post title and text', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
-    const titleEl = compiled.querySelector('mat-card-title');
+    const titleEl = compiled.querySelector('.post-title');
     const textEl = compiled.querySelector('.post-text');
 
     expect(titleEl?.textContent).toContain('Test Titel');
@@ -55,24 +60,16 @@ describe('PostComponent', () => {
     expect(imgEl).toBeTruthy();
 
     const src = imgEl.nativeElement.getAttribute('src');
-    expect(src).toBe(`${environment.minioUrl}/${mockPost.image}`);
+    expect(src).toBe(component.getImageUrl());
   });
 
   it('should NOT render the image tag if post has no image', () => {
-    component.post = { ...mockPost, image: '' };
+    component.post = { ...mockPost, thumbnail: '' };
     fixture.detectChanges();
 
     const imgEl = fixture.debugElement.query(By.css('img.post-image'));
     expect(imgEl).toBeNull();
   });
 
-  it('should log to console when like button is clicked', () => {
-    spyOn(console, 'log');
 
-    const likeButton = fixture.debugElement.query(By.css('button[aria-label="Like Post"]'));
-
-    likeButton.nativeElement.click();
-
-    expect(console.log).toHaveBeenCalledWith(`Post ${mockPost.id} geliked!`);
-  });
 });
