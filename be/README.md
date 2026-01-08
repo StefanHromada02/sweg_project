@@ -78,8 +78,8 @@ docker-compose up --build
 1. **Erstelle Virtual Environment:**
 
 ```bash
-python -m venv venv
-.\venv\Scripts\activate  # Windows
+python3 -m venv venv
+.\\venv\\Scripts\\activate  # Windows
 # source venv/bin/activate  # Linux/Mac
 ```
 
@@ -97,20 +97,20 @@ Setze die notwendigen Environment Variables oder erstelle eine `.env` Datei.
 4. **Führe Migrationen aus:**
 
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+python3 manage.py makemigrations
+python3 manage.py migrate
 ```
 
 5. **Erstelle Superuser (optional):**
 
 ```bash
-python manage.py createsuperuser
+python3 manage.py createsuperuser
 ```
 
 6. **Starte Development Server:**
 
 ```bash
-python manage.py runserver
+python3 manage.py runserver
 ```
 
 ## 📚 API Endpunkte
@@ -158,26 +158,26 @@ Das Projekt enthält ein umfassendes Test-Framework mit Unit- und Integration-Te
 
 ```bash
 # Alle Tests
-docker-compose exec backend python manage.py test
+docker-compose exec backend python3 manage.py test
 
 # Nur Post Tests
-docker-compose exec backend python manage.py test domains.posts.tests
+docker-compose exec backend python3 manage.py test domains.posts.tests
 
 # Spezifische Test-Datei
-docker-compose exec backend python manage.py test domains.posts.tests.test_views
+docker-compose exec backend python3 manage.py test domains.posts.tests.test_views
 
 # Mit Verbose Output
-docker-compose exec backend python manage.py test --verbosity=2
+docker-compose exec backend python3 manage.py test --verbosity=2
 ```
 
 **Lokal:**
 
 ```bash
 # Alle Tests
-python manage.py test
+python3 manage.py test
 
 # Nur bestimmte Tests
-python manage.py test domains.posts.tests.test_integration
+python3 manage.py test domains.posts.tests.test_integration
 
 # Mit Coverage
 pip install coverage
@@ -209,12 +209,12 @@ domains/posts/tests/
 
 ```bash
 # In Docker
-docker-compose exec backend python manage.py makemigrations
-docker-compose exec backend python manage.py migrate
+docker-compose exec backend python3 manage.py makemigrations
+docker-compose exec backend python3 manage.py migrate
 
 # Lokal
-python manage.py makemigrations
-python manage.py migrate
+python3 manage.py makemigrations
+python3 manage.py migrate
 ```
 
 ### Datenbank zurücksetzen:
@@ -260,10 +260,10 @@ docker-compose exec backend sh
 
 ```bash
 # In Docker
-docker-compose exec backend python manage.py shell
+docker-compose exec backend python3 manage.py shell
 
 # Lokal
-python manage.py shell
+python3 manage.py shell
 ```
 
 ## 🔒 Sicherheit
@@ -305,8 +305,8 @@ docker-compose up -d --build
 Start-Sleep -Seconds 10
 
 3. Migrationen erstellen und anwenden
-docker exec -it social-media-backend python manage.py makemigrations
-docker exec -it social-media-backend python manage.py migrate
+docker exec -it social-media-backend python3 manage.py makemigrations
+docker exec -it social-media-backend python3 manage.py migrate
 ### Bei Datenbank-Problemen
 1. Alles stoppen UND Datenbank löschen
 docker-compose down -v
@@ -318,8 +318,8 @@ docker-compose up -d --build
 Start-Sleep -Seconds 15
 
 4. Migrationen
-docker exec -it social-media-backend python manage.py makemigrations
-docker exec -it social-media-backend python manage.py migrate
+docker exec -it social-media-backend python3 manage.py makemigrations
+docker exec -it social-media-backend python3 manage.py migrate
 
 ```bash
 # Container neu bauen
@@ -332,10 +332,10 @@ docker-compose down
 docker-compose down -v
 
 # Superuser erstellen
-docker-compose exec backend python manage.py createsuperuser
+docker-compose exec backend python3 manage.py createsuperuser
 
 # Static Files sammeln
-docker-compose exec backend python manage.py collectstatic --noinput
+docker-compose exec backend python3 manage.py collectstatic --noinput
 ```
 
 ## 📖 Weitere Ressourcen
@@ -352,5 +352,3 @@ Entwickelt als Teil des SWEG Projekts.
 ## 📄 Lizenz
 
 Dieses Projekt ist für Bildungszwecke erstellt.
-
-

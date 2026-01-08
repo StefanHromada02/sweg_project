@@ -4,7 +4,7 @@ RabbitMQ Service for sending messages to the image resize queue.
 import os
 import json
 import pika
-from typing import Optional
+from typing import Optional, Dict, Any
 
 
 class RabbitMQService:
@@ -50,12 +50,12 @@ class RabbitMQService:
         """
         try:
             self.connect()
-            
+
             message = {
                 'image_path': image_path,
                 'post_id': post_id
             }
-            
+
             self.channel.basic_publish(
                 exchange='',
                 routing_key=self.queue_name,
@@ -64,13 +64,89 @@ class RabbitMQService:
                     delivery_mode=2,  # Make message persistent
                 )
             )
-            
+
             print(f"Sent resize task for image: {image_path}")
             return True
-            
+
         except Exception as e:
             print(f"Error sending resize task: {e}")
             return False
+
+    def send_resize_task_and_wait(self, image_path: str, post_id: int, timeout_s: float = 15.0) -> Dict[str, Any]:
+        """Send a resize task and synchronously wait for the worker response (RPC).
+
+        Returns a dict like:
+          success: {"status":"success","post_id":...,"thumbnail_path":...}
+          error:   {"status":"error",...}
+
+        Raises:
+          TimeoutError on timeout.
+          RuntimeError on publish/connection errors.
+        """
+        import uuid
+        import time
+
+        try:
+            self.connect()
+
+            # Exclusive, auto-delete callback queue for this request
+            result = self.channel.queue_declare(queue='', exclusive=True, auto_delete=True)
+            callback_queue = result.method.queue
+            correlation_id = str(uuid.uuid4())
+
+            response_holder: Dict[str, Any] = {}
+
+            def on_response(ch, method, props, body):
+                nonlocal response_holder
+                if props and props.correlation_id == correlation_id:
+                    try:
+                        response_holder = json.loads(body)
+                    except Exception:
+                        response_holder = {"status": "error", "error_code": "INVALID_RESPONSE", "message": "Invalid JSON response"}
+
+            consumer_tag = self.channel.basic_consume(
+                queue=callback_queue,
+                on_message_callback=on_response,
+                auto_ack=True,
+            )
+
+            message = {
+                'image_path': image_path,
+                'post_id': post_id
+            }
+
+            self.channel.basic_publish(
+                exchange='',
+                routing_key=self.queue_name,
+                body=json.dumps(message),
+                properties=pika.BasicProperties(
+                    delivery_mode=2,
+                    reply_to=callback_queue,
+                    correlation_id=correlation_id,
+                    content_type='application/json',
+                )
+            )
+
+            deadline = time.time() + float(timeout_s)
+            while not response_holder and time.time() < deadline:
+                # process network events, dispatch callbacks
+                self.connection.process_data_events(time_limit=0.2)
+
+            # stop consumer to avoid leaks
+            try:
+                self.channel.basic_cancel(consumer_tag)
+            except Exception:
+                pass
+
+            if not response_holder:
+                raise TimeoutError("Timed out waiting for resize result")
+
+            return response_holder
+
+        except TimeoutError:
+            raise
+        except Exception as e:
+            raise RuntimeError(f"RPC resize request failed: {e}")
 
     def close(self):
         """Close the RabbitMQ connection."""
@@ -91,6 +167,9 @@ class RabbitMQServiceProxy:
 
     def send_resize_task(self, *args, **kwargs):
         return self._get().send_resize_task(*args, **kwargs)
+
+    def send_resize_task_and_wait(self, *args, **kwargs):
+        return self._get().send_resize_task_and_wait(*args, **kwargs)
 
     def close(self, *args, **kwargs):
         return self._get().close(*args, **kwargs)

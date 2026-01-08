@@ -140,6 +140,27 @@ class ImageResizeService:
             print(f"Error updating post {post_id}: {e}")
             raise
 
+    def _publish_rpc_response(self, ch, properties, payload: dict):
+        """Publish an RPC response if reply_to/correlation_id are present."""
+        try:
+            reply_to = getattr(properties, 'reply_to', None)
+            correlation_id = getattr(properties, 'correlation_id', None)
+            if not reply_to or not correlation_id:
+                return
+
+            ch.basic_publish(
+                exchange='',
+                routing_key=reply_to,
+                body=json.dumps(payload),
+                properties=pika.BasicProperties(
+                    correlation_id=correlation_id,
+                    content_type='application/json',
+                    delivery_mode=1,
+                )
+            )
+        except Exception as e:
+            print(f"Failed to publish RPC response: {e}")
+
     def process_message(self, ch, method, properties, body):
         """Process a single resize task from the queue."""
         try:
@@ -162,12 +183,47 @@ class ImageResizeService:
             # Update database
             self.update_post_thumbnail(post_id, thumbnail_path)
 
+            # Publish RPC response (if requested)
+            self._publish_rpc_response(
+                ch,
+                properties,
+                {
+                    "status": "success",
+                    "post_id": post_id,
+                    "thumbnail_path": thumbnail_path,
+                },
+            )
+
             # Acknowledge message
             ch.basic_ack(delivery_tag=method.delivery_tag)
             print(f"Successfully processed resize task for post {post_id}")
 
         except Exception as e:
             print(f"Error processing message: {e}")
+
+            # Publish RPC error response (if requested)
+            try:
+                # best effort: attempt to parse post_id for the response
+                post_id_for_error = None
+                try:
+                    msg = json.loads(body)
+                    post_id_for_error = msg.get('post_id')
+                except Exception:
+                    pass
+
+                self._publish_rpc_response(
+                    ch,
+                    properties,
+                    {
+                        "status": "error",
+                        "post_id": post_id_for_error,
+                        "error_code": "PROCESSING_FAILED",
+                        "message": str(e),
+                    },
+                )
+            except Exception:
+                pass
+
             # Reject and requeue the message
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 

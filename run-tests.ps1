@@ -30,7 +30,7 @@ Write-Host "Running tests..." -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 # Run tests in Docker
-docker compose exec backend python -m pytest domains/posts/tests/ -v --tb=short
+docker compose exec backend python3 -m pytest domains/posts/tests/ -v --tb=short
 
 $testResult = $LASTEXITCODE
 
@@ -45,10 +45,10 @@ if ($testResult -eq 0) {
 
 Write-Host ""
 Write-Host "To run specific tests:" -ForegroundColor Yellow
-Write-Host "  docker compose exec backend python -m pytest domains/posts/tests/test_models.py -v" -ForegroundColor Gray
+Write-Host "  docker compose exec backend python3 -m pytest domains/posts/tests/test_models.py -v" -ForegroundColor Gray
 Write-Host ""
 Write-Host "To run with coverage:" -ForegroundColor Yellow
-Write-Host "  docker compose exec backend python -m pytest domains/posts/tests/ --cov=domains" -ForegroundColor Gray
+Write-Host "  docker compose exec backend python3 -m pytest domains/posts/tests/ --cov=domains" -ForegroundColor Gray
 Write-Host ""
 
 exit $testResult

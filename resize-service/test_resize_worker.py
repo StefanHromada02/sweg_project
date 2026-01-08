@@ -167,6 +167,8 @@ class TestImageResizeService:
         mock_method = MagicMock()
         mock_method.delivery_tag = 'test-tag'
         mock_properties = MagicMock()
+        mock_properties.reply_to = 'callback.queue'
+        mock_properties.correlation_id = 'corr-123'
 
         message = {
             'image_path': 'posts/test.jpg',
@@ -189,12 +191,48 @@ class TestImageResizeService:
                     mock_channel.basic_ack.assert_called_once_with(delivery_tag='test-tag')
                     mock_channel.basic_nack.assert_not_called()
 
+                    # Verify RPC response published
+                    mock_channel.basic_publish.assert_called_once()
+                    kwargs = mock_channel.basic_publish.call_args.kwargs
+                    assert kwargs['routing_key'] == 'callback.queue'
+                    assert json.loads(kwargs['body'])['status'] == 'success'
+
+    def test_process_message_success_without_rpc_properties(self, service):
+        """Test processing succeeds even without RPC properties (no reply_to/correlation_id)."""
+        mock_channel = MagicMock()
+        mock_method = MagicMock()
+        mock_method.delivery_tag = 'test-tag'
+        mock_properties = MagicMock()
+        mock_properties.reply_to = None
+        mock_properties.correlation_id = None
+
+        message = {
+            'image_path': 'posts/test.jpg',
+            'post_id': 42
+        }
+        body = json.dumps(message).encode()
+
+        mock_image_data = BytesIO()
+        img = Image.new('RGB', (800, 600), color='green')
+        img.save(mock_image_data, format='JPEG')
+        mock_image_data.seek(0)
+
+        with patch.object(service, 'download_image', return_value=mock_image_data):
+            with patch.object(service.s3_client, 'upload_fileobj'):
+                with patch.object(service, 'update_post_thumbnail'):
+                    service.process_message(mock_channel, mock_method, mock_properties, body)
+
+                    mock_channel.basic_ack.assert_called_once_with(delivery_tag='test-tag')
+                    mock_channel.basic_publish.assert_not_called()
+
     def test_process_message_failure(self, service):
         """Test message processing with failure."""
         mock_channel = MagicMock()
         mock_method = MagicMock()
         mock_method.delivery_tag = 'test-tag'
         mock_properties = MagicMock()
+        mock_properties.reply_to = 'callback.queue'
+        mock_properties.correlation_id = 'corr-123'
 
         message = {
             'image_path': 'posts/test.jpg',
@@ -212,6 +250,12 @@ class TestImageResizeService:
                 requeue=True
             )
             mock_channel.basic_ack.assert_not_called()
+
+            # Verify RPC error response published
+            mock_channel.basic_publish.assert_called_once()
+            kwargs = mock_channel.basic_publish.call_args.kwargs
+            assert kwargs['routing_key'] == 'callback.queue'
+            assert json.loads(kwargs['body'])['status'] == 'error'
 
     def test_resize_small_image(self, service):
         """Test that small images are not upscaled."""

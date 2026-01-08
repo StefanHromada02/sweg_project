@@ -207,10 +207,10 @@ The project includes automated tests for models, serializers, views, and integra
 docker compose up -d
 
 # Run all tests
-docker compose exec backend python -m pytest domains/posts/tests/ -v
+docker compose exec backend python3 -m pytest domains/posts/tests/ -v
 
 # Run specific test file
-docker compose exec backend python -m pytest domains/posts/tests/test_models.py -v
+docker compose exec backend python3 -m pytest domains/posts/tests/test_models.py -v
 ```
 
 **Test Coverage:**

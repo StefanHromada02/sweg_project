@@ -14,13 +14,16 @@ export class ApiService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getPostsForUniversity(University: string, search?: string): Observable<any> {
-    // Backend currently ignores university filter; adjust when BE supports it
+  getPostsForUniversity(University: string, search?: string): Observable<PostModel[]> {
     const params = search ? `?search=${encodeURIComponent(search)}` : '';
-    return this.http.get(`${this.baseUrl}/posts/${params}`);
+    return this.http.get<PostModel[]>(`${this.baseUrl}/posts/${params}`);
   }
 
-  createPost(post: Partial<PostModel>, imageFile?: File): Observable<any> {
+  getPost(id: number): Observable<PostModel> {
+    return this.http.get<PostModel>(`${this.baseUrl}/posts/${id}/`);
+  }
+
+  createPost(post: Partial<PostModel>, imageFile?: File): Observable<PostModel> {
     const formData = new FormData();
     if (post.title) {
       formData.append('title', post.title);
@@ -31,7 +34,7 @@ export class ApiService {
     if (imageFile) {
       formData.append('image_file', imageFile);
     }
-    return this.http.post(`${this.baseUrl}/posts/`, formData);
+    return this.http.post<PostModel>(`${this.baseUrl}/posts/`, formData);
   }
 
   // Get comments for a specific post

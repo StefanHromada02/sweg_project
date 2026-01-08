@@ -1,19 +1,18 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {ApiService} from '../services/api.service';
 import {PostComponent} from '../../components/post/post.component';
-import {Observable} from 'rxjs';
-import {AsyncPipe} from '@angular/common';
+import {Subject, takeUntil} from 'rxjs';
 import {NewPostModal} from '../../components/new-post-modal/new-post-modal';
 import {FormsModule} from '@angular/forms';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatIconModule} from '@angular/material/icon';
+import { PostModel } from '../models/post.model';
 
 @Component({
   selector: 'app-main',
   imports: [
     PostComponent,
-    AsyncPipe,
     NewPostModal,
     FormsModule,
     MatFormFieldModule,
@@ -23,17 +22,26 @@ import {MatIconModule} from '@angular/material/icon';
   templateUrl: './main.component.html',
   styleUrl: './main.component.css',
 })
-export class MainComponent implements OnInit {
+export class MainComponent implements OnInit, OnDestroy {
   apiService = inject(ApiService);
-  posts$!: Observable<any[]>;
+  posts: PostModel[] = [];
   searchQuery: string = '';
+
+  private readonly destroy$ = new Subject<void>();
 
   ngOnInit() {
     this.refreshPosts();
   }
 
-  onCreated() {
-    this.refreshPosts();
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onCreated(post: PostModel) {
+    // Backend wartet beim Create auf die RabbitMQ-Response und liefert direkt den Post (inkl. Thumbnail) zurück.
+    // Daher kein Polling mehr nötig.
+    this.posts = [post, ...this.posts];
   }
 
   onSearch() {
@@ -41,6 +49,15 @@ export class MainComponent implements OnInit {
   }
 
   private refreshPosts() {
-    this.posts$ = this.apiService.getPostsForUniversity("Technikum", this.searchQuery || undefined);
+    this.apiService.getPostsForUniversity("Technikum", this.searchQuery || undefined)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (serverPosts) => {
+          this.posts = serverPosts;
+        },
+        error: () => {
+          this.posts = [];
+        }
+      });
   }
 }

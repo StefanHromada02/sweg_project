@@ -15,9 +15,10 @@ class TestPostAPIIntegration:
         self.client = APIClient()
         self.list_url = reverse('post-list')
 
+    @patch('services.rabbitmq_service.rabbitmq_service.send_resize_task_and_wait', return_value={"status": "success"})
     @patch('services.minio_storage.minio_storage.delete_image')
     @patch('config.authentication.KeycloakAuthentication.authenticate')
-    def test_complete_post_lifecycle(self, mock_auth, mock_delete):
+    def test_complete_post_lifecycle(self, mock_auth, mock_delete, _mock_rpc):
         """Test complete lifecycle: create -> read -> update -> delete."""
         # Mock authenticated user
         mock_user = MagicMock()
@@ -26,7 +27,7 @@ class TestPostAPIIntegration:
         mock_user.is_authenticated = True
         mock_auth.return_value = (mock_user, None)
         mock_delete.return_value = True
-        
+
         # Force authentication
         self.client.force_authenticate(user=mock_user)
 
