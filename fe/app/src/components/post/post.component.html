@@ -1,0 +1,74 @@
+<mat-card class="post-card">
+  <mat-card-content>
+    <h2 class="post-title">{{ post.title }}</h2>
+    <p class="post-text">{{ post.text }}</p>
+    <p class="post-meta">{{ post.author_name }} | {{ formattedDate }}</p>
+  </mat-card-content>
+
+  @if (post.thumbnail) {
+    <img
+      mat-card-image
+      [src]="getImageUrl()"
+      alt="Post image"
+      class="post-image"
+      (click)="openFullImage()"
+      style="cursor: pointer;"
+      [title]="'Klicken zum Vergrößern'"
+    />
+  }
+
+  <mat-card-actions class="post-actions">
+    <div class="left-actions">
+      <button mat-button (click)="toggleComments()" class="comment-toggle-btn">
+        <mat-icon>comment</mat-icon>
+        Kommentare anzeigen
+      </button>
+      <button mat-button color="primary" (click)="toggleCommentInput()">Kommentieren</button>
+      <button mat-button color="accent" (click)="generateAiComment()" [disabled]="isGeneratingAiComment">
+        <mat-icon>smart_toy</mat-icon>
+        {{ isGeneratingAiComment ? 'Generiere...' : 'AI Kommentar' }}
+      </button>
+    </div>
+  </mat-card-actions>
+
+  <!-- Comment Input Section -->
+  @if (showCommentInput) {
+    <mat-card-content class="comment-input-section">
+      <mat-form-field appearance="outline" class="comment-input-field">
+        <mat-label>Kommentar schreiben...</mat-label>
+        <textarea matInput
+                  [(ngModel)]="newCommentText"
+                  rows="3"
+                  placeholder="Schreibe einen Kommentar..."></textarea>
+      </mat-form-field>
+      <div class="comment-input-actions">
+        <button mat-button (click)="toggleCommentInput()">Abbrechen</button>
+        <button mat-raised-button color="primary" (click)="submitComment()">Senden</button>
+      </div>
+    </mat-card-content>
+  }
+
+  <!-- Comments Section -->
+  @if (showComments) {
+    <mat-card-content class="comments-section">
+      <h3 class="comments-title">Kommentare ({{ comments.length }})</h3>
+      @if (comments.length === 0) {
+        <p class="no-comments">Keine Kommentare vorhanden.</p>
+      } @else {
+        <div class="comments-list">
+          @for (comment of comments; track comment.id) {
+            <div class="comment-item">
+              <div class="comment-header">
+                <strong class="comment-author">
+                  {{ comment.author_name }}
+                </strong>
+                <span class="comment-date">{{ formatCommentDate(comment.created_at) }}</span>
+              </div>
+              <p class="comment-text">{{ comment.text }}</p>
+            </div>
+          }
+        </div>
+      }
+    </mat-card-content>
+  }
+</mat-card>

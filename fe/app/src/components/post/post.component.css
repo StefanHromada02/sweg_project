@@ -1,0 +1,142 @@
+.post-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  width: 600px;
+  margin: 20px auto; /* Zentrierung */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+
+.post-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.post-image {
+  max-height: 400px;
+  object-fit: cover; /* Stellt sicher, dass das Bild den Container ausfüllt */
+  width: 100%;
+}
+
+.post-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #333;
+}
+
+.post-text {
+  white-space: pre-wrap; /* Behält Formatierungen bei */
+  margin: 0 0 12px 0;
+  color: #555;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.post-meta {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+}
+
+/* Post Actions Layout */
+.post-actions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 8px 16px !important;
+}
+
+.left-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Comment Input Section */
+.comment-input-section {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.comment-input-field {
+  width: 100%;
+}
+
+.comment-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Comments Section */
+.comments-section {
+  padding: 16px;
+  background-color: #fafafa;
+  border-top: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.comments-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+.no-comments {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 16px;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-item {
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.comment-author {
+  color: #1976d2;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.comment-date {
+  color: #999;
+  font-size: 12px;
+}
+
+.comment-text {
+  margin: 0;
+  color: #333;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

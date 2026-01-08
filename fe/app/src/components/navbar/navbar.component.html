@@ -1,0 +1,38 @@
+<mat-toolbar color="primary" class="navbar mat-elevation-z4">
+  <div class="navbar-brand">
+    <mat-icon>dynamic_feed</mat-icon>
+    <span>Social-Feed</span>
+  </div>
+
+  <div class="search-container">
+    <div class="search-bar">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        placeholder="Beiträge durchsuchen..."
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="onSearch()"
+      />
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="profile-section">
+    <button mat-button [matMenuTriggerFor]="menu" class="profile-button">
+      <mat-icon>account_circle</mat-icon>
+      <span>Profil</span>
+    </button>
+    <mat-menu #menu="matMenu" xPosition="before">
+      <button mat-menu-item (click)="manageAccount()">
+        <mat-icon>settings</mat-icon>
+        <span>Konto verwalten</span>
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>exit_to_app</mat-icon>
+        <span>Abmelden</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+

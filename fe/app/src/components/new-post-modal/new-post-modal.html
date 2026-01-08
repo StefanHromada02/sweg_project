@@ -1,0 +1,57 @@
+<button class="fab" mat-fab color="primary" (click)="open()">
+  <mat-icon>add</mat-icon>
+</button>
+
+<ng-template #dialogTpl let-dialogRef>
+  <h2 mat-dialog-title>Create new post</h2>
+  <div mat-dialog-content>
+    <form [formGroup]="form" class="form">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Title</mat-label>
+        <input matInput formControlName="title" placeholder="Enter a title" maxlength="120" />
+        <mat-hint align="end">{{ form.controls.title.value?.length || 0 }}/120</mat-hint>
+        @if (form.controls.title.hasError('required')) {
+          <mat-error>Title is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Text</mat-label>
+        <textarea matInput formControlName="text" rows="6" placeholder="Write your post..." maxlength="5000"></textarea>
+        <mat-hint align="end">{{ form.controls.text.value?.length || 0 }}/5000</mat-hint>
+        @if (form.controls.text.hasError('required')) {
+          <mat-error>Text is required</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="file-row">
+        <button mat-stroked-button color="primary" type="button" (click)="fileInput.click()">
+          <mat-icon>image</mat-icon>
+          <span>Choose image</span>
+        </button>
+        <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+
+        @if(selectedFile) {
+          <span class="file-name">{{ selectedFile.name }}</span>
+        }
+      </div>
+
+      @if(previewUrl) {
+        <div class="preview">
+          <img [src]="previewUrl" alt="preview" />
+        </div>
+      }
+    </form>
+  </div>
+  <button mat-raised-button color="primary" (click)="submit()" [disabled]="form.invalid || isSubmitting">
+    @if(!isSubmitting) {
+      <ng-container>
+        <mat-icon>send</mat-icon>
+        <span>Post</span>
+      </ng-container>
+    }
+    @if(isSubmitting){
+      <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+    }
+  </button>
+</ng-template>
