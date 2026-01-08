@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { PostComponent } from '../../components/post/post.component';
 import { NewPostModal } from '../../components/new-post-modal/new-post-modal';
+import { PostModel } from '../models/post.model';
 
 // 1. Mock für PostComponent
 @Component({
@@ -23,7 +24,7 @@ class MockPostComponent {
   standalone: true
 })
 class MockNewPostModal {
-  @Output() created = new EventEmitter<void>();
+  @Output() created = new EventEmitter<PostModel>();
 }
 
 describe('MainComponent', () => {
@@ -31,9 +32,29 @@ describe('MainComponent', () => {
   let fixture: ComponentFixture<MainComponent>;
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
-  const mockPosts = [
-    { id: 1, content: 'Hallo Welt', university: 'Technikum' },
-    { id: 2, content: 'Angular ist toll', university: 'Technikum' }
+  const mockPosts: PostModel[] = [
+    {
+      id: 1,
+      author_id: 'u1',
+      author_name: 'User 1',
+      title: 'Hallo Welt',
+      text: 'Test',
+      image: '',
+      thumbnail: '',
+      created_at: new Date().toISOString(),
+      comment_count: 0,
+    },
+    {
+      id: 2,
+      author_id: 'u2',
+      author_name: 'User 2',
+      title: 'Angular ist toll',
+      text: 'Test',
+      image: '',
+      thumbnail: '',
+      created_at: new Date().toISOString(),
+      comment_count: 0,
+    },
   ];
 
   beforeEach(async () => {
@@ -72,16 +93,31 @@ describe('MainComponent', () => {
 
   it('should load posts from university "Technikum" on initialization', () => {
     expect(apiServiceSpy.getPostsForUniversity).toHaveBeenCalledWith('Technikum', undefined);
-    component.posts$.subscribe(posts => {
-      expect(posts.length).toBe(2);
-      expect(posts).toEqual(mockPosts);
-    });
+    expect(component.posts).toEqual(mockPosts);
   });
 
-  it('should refresh posts when onCreated is called', () => {
+  it('should optimistically add post onCreated without triggering a refresh call', () => {
     apiServiceSpy.getPostsForUniversity.calls.reset();
-    component.onCreated();
-    expect(apiServiceSpy.getPostsForUniversity).toHaveBeenCalledWith('Technikum', undefined);
+
+    const createdPost: PostModel = {
+      id: 99,
+      author_id: 'u99',
+      author_name: 'User 99',
+      title: 'Neu',
+      text: 'Neu',
+      image: 'http://localhost:9000/social-media-bucket/x.png',
+      thumbnail: '',
+      created_at: new Date().toISOString(),
+      comment_count: 0,
+    };
+
+    component.onCreated(createdPost);
+
+    // Post wird sofort eingefügt
+    expect(component.posts[0].id).toBe(99);
+
+    // Kein Refresh/Polling mehr
+    expect(apiServiceSpy.getPostsForUniversity).not.toHaveBeenCalled();
   });
 
   it('should render the correct number of post components via template', () => {

@@ -27,7 +27,7 @@ import { PostModel } from '../../app/models/post.model';
   styleUrl: './new-post-modal.css',
 })
 export class NewPostModal {
-  @Output() created = new EventEmitter<any>();
+  @Output() created = new EventEmitter<PostModel>();
   @ViewChild('dialogTpl') dialogTpl!: TemplateRef<unknown>;
 
   private readonly dialog = inject(MatDialog);
@@ -68,7 +68,7 @@ export class NewPostModal {
     };
 
     this.api.createPost(post, this.selectedFile).subscribe({
-      next: (res) => {
+      next: (res: PostModel) => {
         this.isSubmitting = false;
         this.created.emit(res);
         this.reset();

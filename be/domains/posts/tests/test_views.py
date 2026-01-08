@@ -23,8 +23,9 @@ class TestPostViewSet:
         self.list_url = reverse('post-list')
         self.detail_url = reverse('post-detail', kwargs={'pk': self.post.pk})
 
+    @patch('services.rabbitmq_service.rabbitmq_service.send_resize_task_and_wait', return_value={"status": "success"})
     @patch('config.authentication.KeycloakAuthentication.authenticate')
-    def test_get_post_list(self, mock_auth):
+    def test_get_post_list(self, mock_auth, _mock_rpc):
         """Test GET /api/posts/ returns list of posts."""
         # Mock authenticated user
         mock_user = MagicMock()
@@ -40,8 +41,9 @@ class TestPostViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) >= 1
 
+    @patch('services.rabbitmq_service.rabbitmq_service.send_resize_task_and_wait', return_value={"status": "success"})
     @patch('config.authentication.KeycloakAuthentication.authenticate')
-    def test_get_post_detail(self, mock_auth):
+    def test_get_post_detail(self, mock_auth, _mock_rpc):
         """Test GET /api/posts/<pk>/ returns single post."""
         # Mock authenticated user
         mock_user = MagicMock()
@@ -57,8 +59,9 @@ class TestPostViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['title'] == "API Test Post"
 
+    @patch('services.rabbitmq_service.rabbitmq_service.send_resize_task_and_wait', return_value={"status": "success"})
     @patch('config.authentication.KeycloakAuthentication.authenticate')
-    def test_create_post_without_image(self, mock_auth):
+    def test_create_post_without_image(self, mock_auth, _mock_rpc):
         """Test POST /api/posts/ creates post without image."""
         # Mock authenticated user
         mock_user = MagicMock()
