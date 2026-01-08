@@ -33,10 +33,23 @@ module.exports = function (config) {
           '--no-sandbox',
           '--disable-gpu',
           '--disable-dev-shm-usage',
-          '--ignore-certificate-errors'
+          '--ignore-certificate-errors',
+          // Stabilität: verhindert aggressives Throttling in Headless/CI
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          // vermeidet reminder/debug port collisions
+          '--remote-debugging-port=0'
         ]
       }
     },
+
+    // Robuster gegen sporadische Browser-Disconnects / langsame Maschinen
+    browserDisconnectTolerance: 2,
+    browserDisconnectTimeout: 10000, // ms
+    browserNoActivityTimeout: 60000, // ms
+    captureTimeout: 120000, // ms
+    retryLimit: 2,
 
     port: 9876,
     colors: true,
