@@ -4,7 +4,7 @@ Unit tests for Image Resize Service
 import pytest
 import json
 from io import BytesIO
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 from PIL import Image
 from resize_worker import ImageResizeService
 
@@ -35,7 +35,7 @@ class TestImageResizeService:
         assert service.queue_name == 'image_resize_queue'
         assert service.minio_endpoint == 'minio:9000'
         assert service.bucket_name == 'social-media-bucket'
-        assert service.thumbnail_size == (300, 300)
+        assert service.thumbnail_size == (1000, 1000)
 
     def test_resize_image(self, service, sample_image):
         """Test image resizing functionality."""
@@ -47,8 +47,8 @@ class TestImageResizeService:
         # Verify the resized image
         resized.seek(0)
         img = Image.open(resized)
-        assert img.width <= 300
-        assert img.height <= 300
+        assert img.width <= 1000
+        assert img.height <= 1000
         assert img.format == 'JPEG'
 
     def test_resize_image_preserves_aspect_ratio(self, service):
@@ -64,9 +64,9 @@ class TestImageResizeService:
 
         result_img = Image.open(resized)
         # Should maintain aspect ratio
-        assert result_img.width == 300
-        # 300 * (9/16) = 168.75 ≈ 169
-        assert 165 <= result_img.height <= 172
+        assert result_img.width == 1000
+        # 1000 * (9/16) = 562.5
+        assert 555 <= result_img.height <= 570
 
     def test_resize_image_rgba_to_rgb(self, service):
         """Test conversion of RGBA to RGB during resize."""
@@ -105,26 +105,31 @@ class TestImageResizeService:
             assert thumbnail_path == "thumbnails/image123.jpg"
             mock_upload.assert_called_once()
 
-    @patch('psycopg2.connect')
-    def test_update_post_thumbnail(self, mock_connect, service):
+    def test_update_post_thumbnail(self, service):
         """Test updating post thumbnail in database."""
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_connect.return_value = mock_conn
-        mock_conn.cursor.return_value = mock_cursor
-
         post_id = 123
         thumbnail_path = "posts/thumbnails/image.jpg"
 
-        service.update_post_thumbnail(post_id, thumbnail_path)
+        mock_conn = MagicMock()
+        mock_result = MagicMock()
+        mock_conn.execute.return_value = mock_result
 
-        mock_cursor.execute.assert_called_once_with(
-            "UPDATE posts_post SET thumbnail = %s WHERE id = %s",
-            (thumbnail_path, post_id)
-        )
-        mock_conn.commit.assert_called_once()
-        mock_cursor.close.assert_called_once()
-        mock_conn.close.assert_called_once()
+        mock_connect_ctx = MagicMock()
+        mock_connect_ctx.__enter__.return_value = mock_conn
+        mock_connect_ctx.__exit__.return_value = None
+
+        with patch.object(service.db_engine, 'connect', return_value=mock_connect_ctx) as mock_connect:
+            service.update_post_thumbnail(post_id, thumbnail_path)
+
+            mock_connect.assert_called_once()
+            mock_conn.execute.assert_called_once()
+            mock_conn.commit.assert_called_once()
+
+            args, _ = mock_conn.execute.call_args
+            # args[0] ist das SQLAlchemy `text(...)`-Objekt, args[1] ist der Parametertuple/dict
+            params = args[1]
+            assert params["thumbnail"] == thumbnail_path
+            assert params["id"] == post_id
 
     def test_download_image_success(self, service):
         """Test successful image download from MinIO."""
@@ -155,8 +160,7 @@ class TestImageResizeService:
             assert call_args.args[2] == "posts/thumbnails/image.jpg"
             assert call_args.kwargs['ExtraArgs']['ContentType'] == 'image/jpeg'
 
-    @patch('psycopg2.connect')
-    def test_process_message_success(self, mock_connect, service):
+    def test_process_message_success(self, service):
         """Test successful message processing."""
         # Setup mocks
         mock_channel = MagicMock()
@@ -170,12 +174,6 @@ class TestImageResizeService:
         }
         body = json.dumps(message).encode()
 
-        # Mock database
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_connect.return_value = mock_conn
-        mock_conn.cursor.return_value = mock_cursor
-
         # Mock S3 operations
         mock_image_data = BytesIO()
         img = Image.new('RGB', (800, 600), color='green')
@@ -184,14 +182,14 @@ class TestImageResizeService:
 
         with patch.object(service, 'download_image', return_value=mock_image_data):
             with patch.object(service.s3_client, 'upload_fileobj'):
-                service.process_message(mock_channel, mock_method, mock_properties, body)
+                with patch.object(service, 'update_post_thumbnail'):
+                    service.process_message(mock_channel, mock_method, mock_properties, body)
 
-                # Verify message was acknowledged
-                mock_channel.basic_ack.assert_called_once_with(delivery_tag='test-tag')
-                mock_channel.basic_nack.assert_not_called()
+                    # Verify message was acknowledged
+                    mock_channel.basic_ack.assert_called_once_with(delivery_tag='test-tag')
+                    mock_channel.basic_nack.assert_not_called()
 
-    @patch('psycopg2.connect')
-    def test_process_message_failure(self, mock_connect, service):
+    def test_process_message_failure(self, service):
         """Test message processing with failure."""
         mock_channel = MagicMock()
         mock_method = MagicMock()
